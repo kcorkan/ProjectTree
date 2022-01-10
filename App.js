@@ -76,35 +76,36 @@ Ext.define( 'Rally.ui.tree.extendedTreeItem' , {
         return app.getSetting('autoExpand');
     },
 
-    _checkPermissions: function( member, record) {
+    // _checkPermissions: function( member, record) {
 
-        //Need to get back to the app to fetch the userInfo
-        var app = this.up('#projectApp');
-        var user = app._findUser(member, app);
+    //     //Need to get back to the app to fetch the userInfo
+    //     var app = this.up('#projectApp');
+    //     var user = app._findUser(member, app);
 
-        //Now look in the user.permissions for the access to this 'record'
+    //     //Now look in the user.permissions for the access to this 'record'
 
-        var projectPermissions = _.filter(user.permissions, function (permission) {
-            return permission.get('Project')._ref === record.get('_ref');
-        });
+    //     var projectPermissions = _.filter(user.permissions, function (permission) {
+    //         return permission.get('Project')._ref === record.get('_ref');
+    //     });
 
-        if (projectPermissions.length === 0) return app.getSetting('showViewers')? 'lightblue': null;
+    //     if (projectPermissions.length === 0) return app.getSetting('showViewers')? app.PERMISSIONS.Viewer : null;
 
-        var isProjectAdmin = (_.find(projectPermissions, function(permission) {
-            return (permission.get('Role') === 'Admin');
+    //     var isProjectAdmin = (_.find(projectPermissions, function(permission) {
+    //         return (permission.get('Role') === 'Admin');
 
-        }) !== undefined);
+    //     }) !== undefined);
 
-        if (app.getSetting('projectAdminsOnly') && !isProjectAdmin) { return null;}
+    //     if (app.getSetting('projectAdminsOnly') && !isProjectAdmin) { return null;}
 
-        var isEditor = (_.find(projectPermissions, function(permission) {
-            return (permission.get('Role') === 'Editor');
+    //     var isEditor = (_.find(projectPermissions, function(permission) {
+    //         return (permission.get('Role') === 'Editor');
 
-        }) !== undefined);
+    //     }) !== undefined);
 
 
-        return isEditor ? 'lightgreen' : isProjectAdmin ? 'orange' : 'red';
-    },
+
+    //     return isEditor ? app.EDITOR : isProjectAdmin ? app.PROJECT_ADMIN : app.ADMIN;
+    // },
 
     getContentTpl: function() {
         var me = this;
@@ -226,17 +227,18 @@ Ext.define( 'Rally.ui.tree.extendedTreeItem' , {
 
                                             _.each(data, function(member) {
                                                 var mseSelected;
-                                                var thisBorder = me._checkPermissions(member, record);
+                                                var thisBorder = app._checkPermissions(member, record, app);
                                                 if (thisBorder !== null) {
                                                     var user = Ext.clone(
                                                         {   xtype: 'textfield',
                                                             readOnly: true,
                                                             border: '0 0 0 5',
                                                             style: {
-                                                                borderColor: thisBorder,
+                                                                borderColor: app.PERMISSIONS[thisBorder],
                                                                 borderStyle: 'solid',
                                                                 marginLeft: '10px'
                                                             },
+                                                            userId: member.get('_refObjectUUID'),
                                                             value: member.get('_refObjectName')
                                                         });
                                                         
@@ -276,37 +278,13 @@ Ext.define('Niks.apps.ProjectTreeApp', {
     itemId: 'projectApp',
     id: 'projectApp',
     stateful: true,
-
-    items: [
-
-        {
-            xtype: 'container',
-            margin: '5 0 20 0',
-            layout: 'hbox',
-            items: [
-                {
-                    xtype: 'container',
-                    html: '<div style="margin-left: 10px; padding-left: 10px;padding-right: 20px">Permission Colour Coding:   </div>'
-                },
-                {
-                    xtype: 'container',
-                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid red">Workspace Admin</div>'
-                },
-                {
-                    xtype: 'container',
-                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid orange">Project Admin</div>'
-                },
-                {
-                    xtype: 'container',
-                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid lightgreen">Project Editor</div>'
-                },
-                {
-                    xtype: 'container',
-                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid lightblue">Project Viewer</div>'
-                }
-            ]
-        }
-    ],
+      
+    PERMISSIONS: {
+        "Editor": 'lightgreen',
+        'Viewer': 'lightblue',
+        'Admin': "red",
+        'Project Admin': 'orange'
+    },
     config: {
         defaultSettings: {
             userGroup: 'Editors',
@@ -360,7 +338,35 @@ Ext.define('Niks.apps.ProjectTreeApp', {
             }
         ];
     },
-
+    _buildLegend: function(){
+        return {
+            xtype: 'container',
+            margin: '5 0 20 0',
+            layout: 'hbox',
+            items: [
+                {
+                    xtype: 'container',
+                    html: '<div style="margin-left: 10px; padding-left: 10px;padding-right: 20px">Permission Colour Coding:   </div>'
+                },
+                {
+                    xtype: 'container',
+                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid ' + this.PERMISSIONS.Admin + '">Workspace Admin</div>'
+                },
+                {
+                    xtype: 'container',
+                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid ' + this.PERMISSIONS["Project Admin"] + '">Project Admin</div>'
+                },
+                {
+                    xtype: 'container',
+                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid ' + this.PERMISSIONS.Editor + '">Project Editor</div>'
+                },
+                {
+                    xtype: 'container',
+                    html: '<div style="margin-left: 10px; padding-left: 3px; padding-right: 10px; border-left: 5px solid ' + this.PERMISSIONS.Viewer + '">Project Viewer</div>'
+                }
+            ]
+        };
+    },
     _getFilters: function(app) {
 
         var filters = [];
@@ -390,21 +396,18 @@ Ext.define('Niks.apps.ProjectTreeApp', {
         return filters;
     },
 
-    userInfo: [],
+    userInfo: {}, //[],
     projectInfo: [],
 
     launch: function() {
 
         var app = this;
-
+        this.add(this._buildLegend());
 
         var pt = Ext.create( 'Rally.ui.tree.ProjectTree', {
-
-//        stateful: true,
-//        stateId: app.getContext().getScopedStateId('projectTree'),
-
             config: {
                 //We are going to enforce that this works within the context the user is at.
+                itemId: 'projectTree',
                 topLevelModel: 'Project',
                 treeItemConfigForRecordFn:  function(record) {
                     return {
@@ -413,10 +416,6 @@ Ext.define('Niks.apps.ProjectTreeApp', {
                     };
                 },
                 topLevelStoreConfig: {
-                    // context: {
-                    //     workspace: app.getContext().getWorkspace(),
-                    //     project: app.getContext().getProject()
-                    // },
                     fetch: ['Name', 'Owner', 'State', 'Children:summary[State]', 'Workspace', 'Editors', 'TeamMembers'],
                     hydrate: ['Owner'],
                     filters: [{
@@ -430,7 +429,6 @@ Ext.define('Niks.apps.ProjectTreeApp', {
                 },
 
                 childItemsStoreConfigForParentRecordFn: function(record){
-
                     var storeConfig = {
                         fetch: ['Name', 'Description', 'Owner', 'Children:summary[State]', 'State', 'Workspace'],
                         hydrate: ['Owner'],
@@ -456,7 +454,8 @@ Ext.define('Niks.apps.ProjectTreeApp', {
                     app._getUserDetails(records,app).then({
                         success: function(newUsers) { 
                             _.each(newUsers, function(user) {
-                                app.userInfo.push(user);
+                                //app.userInfo.push(user);
+                                app.userInfo[user.get('_refObjectUUID')] = user;
                             });
                             me.renderChildRecords(records, parentTreeItem); 
                         },
@@ -471,7 +470,8 @@ Ext.define('Niks.apps.ProjectTreeApp', {
                     app._getUserDetails(records,app).then({
                         success: function(newUsers) { 
                             _.each(newUsers, function(user) {
-                                app.userInfo.push(user);
+                                //app.userInfo.push(user);
+                                app.userInfo[user.get('_refObjectUUID')] = user;
                             });
                             me.renderParentRecords(records); 
                         },
@@ -485,8 +485,47 @@ Ext.define('Niks.apps.ProjectTreeApp', {
         });
 
        this.add(pt);
+       
+       this.add({
+            xtype: 'rallybutton',
+            text: "Export",
+            handler: this._doExport,
+            scope: app 
+        }); 
     },
-
+    _doExport: function() {
+        var rowData = this._extractExportData();
+        var rowHeadersHash = {
+            "Project": "Project",
+            "DisplayName": "Display Name",
+            "Permission":"Permission"
+        };
+        this._saveExportDataFile(rowData, rowHeadersHash); 
+    },
+    _extractExportData: function(){
+       console.log('_extractExportData');
+       var treeItems = this.query('extendedTreeItem');
+       var rows = [];
+       for (var i=0; i<treeItems.length; i++){
+           var project = treeItems[i].getRecord(); 
+           var users = treeItems[i].down('#treeItemContent').down('#userInfoRecord').query('textfield');
+           for (var j=0; j<users.length; j++){
+               var row = {};
+               row.Project = project.get('Name');
+               var foundUser = this._findUser(users[j].userId, this);
+               var permission = this._checkPermissions(users[j].userId,project,this);
+               row.DisplayName = foundUser.get('_refObjectName');
+               row.Permission = permission;
+               rows.push(row);
+           }
+       }
+       return rows;
+    },
+    _saveExportDataFile: function(rowData, rowHeaders){
+        var fileText = CArABU.technicalservices.FileUtilities.convertDataArrayToCSVText(rowData,rowHeaders);
+        var fileName = Ext.String.format("projecttree-{0}.csv", new Date().toISOString());
+        CArABU.technicalservices.FileUtilities.saveTextAsFile(fileText,fileName);
+    },
     _getUserDetails: function(records,app) {
         var deferred = Ext.create('Deft.Deferred');
 
@@ -595,8 +634,41 @@ Ext.define('Niks.apps.ProjectTreeApp', {
     },
 
     _findUser: function(user, app) {
+        if (Ext.isObject(user)){
+            user = user.get('_refObjectUUID');
+        }
+        return app.userInfo[user];
         return _.find(app.userInfo, function(knownUser) {
             return knownUser.get('_refObjectUUID') === user.get('_refObjectUUID');
         });
-    }
+    },
+    _checkPermissions: function( member, record, app) {
+
+        //Need to get back to the app to fetch the userInfo
+        var user = app._findUser(member, app);
+
+        //Now look in the user.permissions for the access to this 'record'
+
+        var projectPermissions = _.filter(user.permissions, function (permission) {
+            return permission.get('Project')._ref === record.get('_ref');
+        });
+
+        if (projectPermissions.length === 0) return app.getSetting('showViewers')? app.PERMISSIONS.Viewer : null;
+
+        var isProjectAdmin = (_.find(projectPermissions, function(permission) {
+            return (permission.get('Role') === 'Admin');
+
+        }) !== undefined);
+
+        if (app.getSetting('projectAdminsOnly') && !isProjectAdmin) { return null;}
+
+        var isEditor = (_.find(projectPermissions, function(permission) {
+            return (permission.get('Role') === 'Editor');
+
+        }) !== undefined);
+
+
+
+        return isEditor ? 'Editor' : isProjectAdmin ? 'Project Admin' : 'Admin';
+    },
 });
