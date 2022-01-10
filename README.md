@@ -1,6 +1,8 @@
 ProjectTree
 =========================
 
+Forked from https://github.com/nikantonelli/ProjectTree
+
 ## Overview
 
 Shows the project tree visible to you based on your permissions and will list out the people connected to the tree node as either "Editors" or as "Team Members". The definition of these two types is taken directly from the WSAPI fields on the "User" type.
